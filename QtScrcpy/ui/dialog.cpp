@@ -11,6 +11,7 @@
 #include "ui_dialog.h"
 #include "videoform.h"
 #include "../groupcontroller/groupcontroller.h"
+#include "actionrecord.h"
 
 #ifdef Q_OS_WIN32
 #include "../util/winutils.h"
@@ -486,6 +487,9 @@ void Dialog::onDeviceConnected(bool success, const QString &serial, const QStrin
 #endif
 
     GroupController::instance().addDevice(serial);
+
+    ActionRecord::getInstance().setSerial(serial);
+    ActionRecord::getInstance().show();
 }
 
 void Dialog::onDeviceDisconnected(QString serial)

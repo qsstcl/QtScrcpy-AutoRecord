@@ -128,6 +128,9 @@ set(QC_UI_SOURCES
     ui/dialog.ui
     render/qyuvopenglwidget.h
     render/qyuvopenglwidget.cpp
+    ui/actionrecord.h
+    ui/actionrecord.cpp
+    ui/actionrecord.ui
 )
 source_group(ui FILES ${QC_UI_SOURCES})
 

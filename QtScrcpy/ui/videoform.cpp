@@ -21,6 +21,8 @@
 #include "ui_videoform.h"
 #include "videoform.h"
 
+#include "actionrecord.h"
+
 VideoForm::VideoForm(bool framelessWindow, bool skin, QWidget *parent) : QWidget(parent), ui(new Ui::videoForm), m_skin(skin)
 {
     ui->setupUi(this);
@@ -582,8 +584,11 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
         if (event->button() == Qt::LeftButton) {
             qreal x = event->localPos().x() / m_videoWidget->size().width();
             qreal y = event->localPos().y() / m_videoWidget->size().height();
-            QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
-            qInfo() << posTip.toStdString().c_str();
+            // QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
+            // qInfo() << posTip.toStdString().c_str();
+
+            if (ActionRecord::getInstance().recording())
+                ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
         }
     } else {
         if (event->button() == Qt::LeftButton) {
@@ -617,6 +622,16 @@ void VideoForm::mouseReleaseEvent(QMouseEvent *event)
         }
         event->setLocalPos(local);
         emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
+
+        if (event->button() == Qt::LeftButton) {
+            qreal x = event->localPos().x() / m_videoWidget->size().width();
+            qreal y = event->localPos().y() / m_videoWidget->size().height();
+            // QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
+            // qInfo() << posTip.toStdString().c_str();
+
+            if (ActionRecord::getInstance().recording())
+                ActionRecord::getInstance().appendAction(QString("RELEASE [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+        }
     } else {
         m_dragPosition = QPoint(0, 0);
     }
