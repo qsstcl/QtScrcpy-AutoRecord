@@ -1,6 +1,7 @@
 #include "actionrecord.h"
 #include <QDebug>
 #include "../QtScrcpyCore/include/QtScrcpyCore.h"
+#include "QDir"
 
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
@@ -42,6 +43,8 @@ void ActionRecord::appendAction(const QString &action)
 void ActionRecord::on_startButton_clicked()
 {
     ui->recordingLabel->setText("Recording...");
+    this->curEpsActions.clear();
+    this->curStepActions.clear();
     this->isRecording = true;
 }
 
@@ -70,15 +73,18 @@ void ActionRecord::on_stepButton_clicked()
         return;
     }
 
-    qInfo() << QString("%1 --> %2:").arg(QString::number(ui->stepSpin->value())).arg(QString::number(ui->stepSpin->value() + 1));
+    QString trans = QString("%1 --> %2:").arg(QString::number(ui->stepSpin->value())).arg(QString::number(ui->stepSpin->value() + 1));
+    qInfo() << trans;
+    this->curEpsActions.append(trans);
     for (auto& action : this->curStepActions) {
         qInfo() << action;
+        this->curEpsActions.append(action);
     }
     this->curStepActions.clear();
 
     ui->stepSpin->stepBy(1);
 
-    QString filename = QString("%1_%2_%3_%4_%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
+    QString filename = QString("%1/%2/%3/%4/%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
 
     device->screenshotWithFilename(filename);
 }
@@ -106,5 +112,33 @@ void ActionRecord::on_domain_currentTextChanged(const QString &arg1)
         ui->subdomain->addItem("Social-Networking");
         ui->subdomain->addItem("Instant-Messaging");
     }
+}
+
+
+void ActionRecord::on_nextEpsButton_clicked()
+{
+    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
+    if (!device) {
+        return;
+    }
+    const QString& recordRootPath = device->getDeviceParams().recordPath;
+    QString filename = QString("%1/%2/%3/%4/actions.log").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text());
+    QDir dir(recordRootPath);
+
+    QFile logFile(dir.absoluteFilePath(filename));
+    if (!logFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        qInfo() << "Open file " << filename << " failed.";
+        return;
+    }
+    QString content;
+    for (auto& s : this->curEpsActions) {
+        content += s + "\n";
+    }
+    logFile.write(content.toStdString().c_str());
+    logFile.close();
+
+    ui->stepSpin->setValue(1);
+    ui->episodeSpin->stepBy(1);
+    on_endButton_clicked();
 }
 

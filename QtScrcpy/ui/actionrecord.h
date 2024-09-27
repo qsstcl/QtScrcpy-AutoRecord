@@ -34,9 +34,12 @@ private slots:
 
     void on_domain_currentTextChanged(const QString &arg1);
 
+    void on_nextEpsButton_clicked();
+
 private:
     Ui::ActionRecord *ui;
     QVector<QString> curStepActions;
+    QVector<QString> curEpsActions;
     QString serial;
     bool isRecording;
 };
