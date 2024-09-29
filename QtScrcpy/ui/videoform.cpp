@@ -12,7 +12,8 @@
 #include <QTimer>
 #include <QWindow>
 #include <QtWidgets/QHBoxLayout>
-
+#include <QClipboard>
+#include <QMimeData>
 #include "config.h"
 #include "iconhelper.h"
 #include "qyuvopenglwidget.h"
@@ -346,6 +347,15 @@ void VideoForm::installShortcut()
         if (!device) {
             return;
         }
+        QClipboard* clipboard = QApplication::clipboard();
+        const QMimeData* mimeData = clipboard->mimeData();
+        if (mimeData->hasText()) {
+            qInfo() << "Paste: " << mimeData->text();
+            if (ActionRecord::getInstance().recording())
+                ActionRecord::getInstance().appendAction(QString("INPUT %1").arg(mimeData->text()));
+        } else {
+            // qInfo() << "Paste: Nothing";
+        }
         emit device->setDeviceClipboard();
     });
 
@@ -358,6 +368,12 @@ void VideoForm::installShortcut()
             return;
         }
         emit device->clipboardPaste();
+    });
+
+    shortcut = new QShortcut(QKeySequence("Ctrl+d"), this);
+    shortcut->setAutoRepeat(false);
+    connect(shortcut, &QShortcut::activated, this, []() {
+        ActionRecord::getInstance().step();
     });
 }
 

@@ -24,6 +24,7 @@ public:
     void appendAction(const QString& action);
     void setSerial(const QString& serial);
     bool recording();
+    void step();
 
 private slots:
     void on_startButton_clicked();
@@ -35,6 +36,8 @@ private slots:
     void on_domain_currentTextChanged(const QString &arg1);
 
     void on_nextEpsButton_clicked();
+
+    void on_lineEdit_returnPressed();
 
 private:
     Ui::ActionRecord *ui;

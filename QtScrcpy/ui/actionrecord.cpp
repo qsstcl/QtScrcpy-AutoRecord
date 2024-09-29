@@ -2,6 +2,8 @@
 #include <QDebug>
 #include "../QtScrcpyCore/include/QtScrcpyCore.h"
 #include "QDir"
+#include <QClipboard>
+#include <QShortcut>
 
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
@@ -22,6 +24,12 @@ ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::Action
     ui->stepSpin->setValue(1);
 
     this->isRecording = false;
+
+    auto shortcut = new QShortcut(QKeySequence("Ctrl+d"), this);
+    shortcut->setAutoRepeat(false);
+    connect(shortcut, &QShortcut::activated, this, [this]() {
+        this->step();
+    });
 }
 
 ActionRecord::~ActionRecord()
@@ -52,6 +60,8 @@ void ActionRecord::on_startButton_clicked()
 void ActionRecord::on_endButton_clicked()
 {
     ui->recordingLabel->setText("Recording Stopped");
+    this->curEpsActions.clear();
+    this->curStepActions.clear();
     this->isRecording = false;
 }
 
@@ -63,6 +73,11 @@ void ActionRecord::setSerial(const QString &serial)
 bool ActionRecord::recording()
 {
     return this->isRecording;
+}
+
+void ActionRecord::step()
+{
+    on_stepButton_clicked();
 }
 
 
@@ -125,7 +140,8 @@ void ActionRecord::on_nextEpsButton_clicked()
     QString filename = QString("%1/%2/%3/%4/actions.log").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text());
     QDir dir(recordRootPath);
 
-    QFile logFile(dir.absoluteFilePath(filename));
+    QString absolutePath = dir.absoluteFilePath(filename);
+    QFile logFile(absolutePath);
     if (!logFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
         qInfo() << "Open file " << filename << " failed.";
         return;
@@ -140,5 +156,25 @@ void ActionRecord::on_nextEpsButton_clicked()
     ui->stepSpin->setValue(1);
     ui->episodeSpin->stepBy(1);
     on_endButton_clicked();
+    qInfo() << "action log saved to " << absolutePath;
+}
+
+
+void ActionRecord::on_lineEdit_returnPressed()
+{
+    if (!recording())
+        return;
+    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
+    if (!device) {
+        return;
+    }
+    QString input = ui->lineEdit->text();
+    QClipboard *board = QApplication::clipboard();
+    board->setText(input);
+    emit device->setDeviceClipboard();
+    board->clear();
+    // device->postTextInput(input);
+    appendAction(QString("INPUT %1").arg(input));
+    ui->lineEdit->clear();
 }
 
