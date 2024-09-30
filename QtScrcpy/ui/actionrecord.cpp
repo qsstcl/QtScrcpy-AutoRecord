@@ -4,6 +4,9 @@
 #include "QDir"
 #include <QClipboard>
 #include <QShortcut>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
@@ -80,6 +83,68 @@ void ActionRecord::step()
     on_stepButton_clicked();
 }
 
+void ActionRecord::loadTasks()
+{
+    this->tasks.clear();
+    this->tasks.insert("Lifestyle", {{"Food-Delivery", {}}, {"Shopping", {}}, {"Traveling", {}}});
+    this->tasks.insert("System", {{"Settings", {}}, {"Interaction", {}}});
+    this->tasks.insert("Tools", {{"Browser", {}}, {"Productivity", {}}});
+    this->tasks.insert("Multimedia", {{"Music", {}}, {"Video", {}}});
+    this->tasks.insert("Communication", {{"Community", {}}, {"Email", {}}, {"Social-Networking", {}}, {"Instant-Messaging", {}}});
+
+    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
+    if (!device) {
+        return;
+    }
+
+    const QString& recordRootPath = device->getDeviceParams().recordPath;
+    QString filename = QString("tasks.json");
+    QDir dir(recordRootPath);
+    QString absolutePath = dir.absoluteFilePath(filename);
+    QFile file(absolutePath);
+    if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        qInfo() << "Open file " << filename << " failed.";
+        return;
+    }
+    QTextStream stream(&file);
+    stream.setCodec("UTF-8");
+    QString str = stream.readAll();
+    file.close();
+
+    QJsonParseError jsonError;
+    QJsonDocument doc = QJsonDocument::fromJson(str.toUtf8(), &jsonError);
+    if (jsonError.error != QJsonParseError::NoError && !doc.isNull()) {
+        qInfo() << "Parse json file " << filename << " failed.";
+        return;
+    }
+    QJsonObject rootObj = doc.object();
+    for (auto it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+        QJsonValue subdomainValue = rootObj.value(it.key());
+        if (!subdomainValue.isObject()) {
+            qInfo() << "Parse json file " << filename << " failed at key \"" << it.key() << "\".";
+            return;
+        }
+        QJsonObject subdomainObject =subdomainValue.toObject();
+        auto& subdomainMap = it.value();
+        for (auto it2 = subdomainMap.begin(); it2 != subdomainMap.end(); ++it2) {
+            QJsonValue taskArrayValue = subdomainObject.value(it2.key());
+            if (!taskArrayValue.isArray()) {
+                qInfo() << "Parse json file " << filename << " failed at key \"" << it2.key() << "\".";
+                return;
+            }
+            QJsonArray taskArray = taskArrayValue.toArray();
+            for (int i = 0; i < taskArray.size(); ++i) {
+                QJsonValue taskValue = taskArray.at(i);
+                if (!taskValue.isString()) {
+                    qInfo() << "Parse json file " << filename << " failed at key \"" << it2.key() << "\".";
+                    return;
+                }
+                it2.value().append(taskValue.toString());
+            }
+        }
+    }
+}
+
 
 void ActionRecord::on_stepButton_clicked()
 {
@@ -107,25 +172,31 @@ void ActionRecord::on_stepButton_clicked()
 
 void ActionRecord::on_domain_currentTextChanged(const QString &arg1)
 {
+    if (!this->tasks.contains(arg1))
+        return;
     ui->subdomain->clear();
-    if (arg1 == "Lifestyle") {
-        ui->subdomain->addItem("Food-Delivery");
-        ui->subdomain->addItem("Shopping");
-        ui->subdomain->addItem("Traveling");
-    } else if (arg1 == "System") {
-        ui->subdomain->addItem("Settings");
-        ui->subdomain->addItem("Interaction");
-    } else if (arg1 == "Tools") {
-        ui->subdomain->addItem("Browser");
-        ui->subdomain->addItem("Productivity");
-    } else if (arg1 == "Multimedia") {
-        ui->subdomain->addItem("Music");
-        ui->subdomain->addItem("Video");
-    } else if (arg1 == "Communication") {
-        ui->subdomain->addItem("Community");
-        ui->subdomain->addItem("Email");
-        ui->subdomain->addItem("Social-Networking");
-        ui->subdomain->addItem("Instant-Messaging");
+    // if (arg1 == "Lifestyle") {
+    //     ui->subdomain->addItem("Food-Delivery");
+    //     ui->subdomain->addItem("Shopping");
+    //     ui->subdomain->addItem("Traveling");
+    // } else if (arg1 == "System") {
+    //     ui->subdomain->addItem("Settings");
+    //     ui->subdomain->addItem("Interaction");
+    // } else if (arg1 == "Tools") {
+    //     ui->subdomain->addItem("Browser");
+    //     ui->subdomain->addItem("Productivity");
+    // } else if (arg1 == "Multimedia") {
+    //     ui->subdomain->addItem("Music");
+    //     ui->subdomain->addItem("Video");
+    // } else if (arg1 == "Communication") {
+    //     ui->subdomain->addItem("Community");
+    //     ui->subdomain->addItem("Email");
+    //     ui->subdomain->addItem("Social-Networking");
+    //     ui->subdomain->addItem("Instant-Messaging");
+    // }
+    auto& map = this->tasks[arg1];
+    for (auto it = map.keyBegin(); it != map.keyEnd(); it++) {
+        ui->subdomain->addItem(*it);
     }
 }
 
