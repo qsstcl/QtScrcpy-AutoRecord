@@ -27,6 +27,7 @@ ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::Action
     ui->stepSpin->setValue(1);
 
     this->isRecording = false;
+    this->isFakeModeActivated = false;
 
     auto shortcut = new QShortcut(QKeySequence("Ctrl+d"), this);
     shortcut->setAutoRepeat(false);
@@ -57,6 +58,12 @@ void ActionRecord::on_startButton_clicked()
     this->curEpsActions.clear();
     this->curStepActions.clear();
     this->isRecording = true;
+    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
+    if (!device) {
+        return;
+    }
+    QString filename = QString("%1/%2/%3/%4/%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
+    device->screenshotWithFilename(filename);
 }
 
 
@@ -102,21 +109,20 @@ void ActionRecord::loadTasks()
     QDir dir(recordRootPath);
     QString absolutePath = dir.absoluteFilePath(filename);
     QFile file(absolutePath);
-    if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadWrite)) {
         qInfo() << "Open file " << filename << " failed.";
         return;
     }
-    QTextStream stream(&file);
-    stream.setCodec("UTF-8");
-    QString str = stream.readAll();
-    file.close();
 
     QJsonParseError jsonError;
-    QJsonDocument doc = QJsonDocument::fromJson(str.toUtf8(), &jsonError);
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &jsonError);
+    file.close();
+
     if (jsonError.error != QJsonParseError::NoError && !doc.isNull()) {
         qInfo() << "Parse json file " << filename << " failed.";
         return;
     }
+
     QJsonObject rootObj = doc.object();
     for (auto it = this->tasks.begin(); it != this->tasks.end(); ++it) {
         QJsonValue subdomainValue = rootObj.value(it.key());
@@ -145,6 +151,11 @@ void ActionRecord::loadTasks()
     }
 }
 
+bool ActionRecord::fakeModeActivated()
+{
+    return this->isFakeModeActivated;
+}
+
 
 void ActionRecord::on_stepButton_clicked()
 {
@@ -170,34 +181,34 @@ void ActionRecord::on_stepButton_clicked()
 }
 
 
-void ActionRecord::on_domain_currentTextChanged(const QString &arg1)
+void ActionRecord::on_domain_currentTextChanged(const QString &text)
 {
-    if (!this->tasks.contains(arg1))
-        return;
+    // if (!this->tasks.contains(arg1))
+    //     return;
     ui->subdomain->clear();
-    // if (arg1 == "Lifestyle") {
-    //     ui->subdomain->addItem("Food-Delivery");
-    //     ui->subdomain->addItem("Shopping");
-    //     ui->subdomain->addItem("Traveling");
-    // } else if (arg1 == "System") {
-    //     ui->subdomain->addItem("Settings");
-    //     ui->subdomain->addItem("Interaction");
-    // } else if (arg1 == "Tools") {
-    //     ui->subdomain->addItem("Browser");
-    //     ui->subdomain->addItem("Productivity");
-    // } else if (arg1 == "Multimedia") {
-    //     ui->subdomain->addItem("Music");
-    //     ui->subdomain->addItem("Video");
-    // } else if (arg1 == "Communication") {
-    //     ui->subdomain->addItem("Community");
-    //     ui->subdomain->addItem("Email");
-    //     ui->subdomain->addItem("Social-Networking");
-    //     ui->subdomain->addItem("Instant-Messaging");
-    // }
-    auto& map = this->tasks[arg1];
-    for (auto it = map.keyBegin(); it != map.keyEnd(); it++) {
-        ui->subdomain->addItem(*it);
+    if (text == "Lifestyle") {
+        ui->subdomain->addItem("Food-Delivery");
+        ui->subdomain->addItem("Shopping");
+        ui->subdomain->addItem("Traveling");
+    } else if (text == "System") {
+        ui->subdomain->addItem("Settings");
+        ui->subdomain->addItem("Interaction");
+    } else if (text == "Tools") {
+        ui->subdomain->addItem("Browser");
+        ui->subdomain->addItem("Productivity");
+    } else if (text == "Multimedia") {
+        ui->subdomain->addItem("Music");
+        ui->subdomain->addItem("Video");
+    } else if (text == "Communication") {
+        ui->subdomain->addItem("Community");
+        ui->subdomain->addItem("Email");
+        ui->subdomain->addItem("Social-Networking");
+        ui->subdomain->addItem("Instant-Messaging");
     }
+    // auto& map = this->tasks[arg1];
+    // for (auto it = map.keyBegin(); it != map.keyEnd(); it++) {
+    //     ui->subdomain->addItem(*it);
+    // }
 }
 
 
@@ -217,7 +228,7 @@ void ActionRecord::on_nextEpsButton_clicked()
         qInfo() << "Open file " << filename << " failed.";
         return;
     }
-    QString content;
+    QString content = QString("task: %1\n").arg(ui->taskEdit->text());
     for (auto& s : this->curEpsActions) {
         content += s + "\n";
     }
@@ -247,5 +258,17 @@ void ActionRecord::on_lineEdit_returnPressed()
     // device->postTextInput(input);
     appendAction(QString("INPUT %1").arg(input));
     ui->lineEdit->clear();
+}
+
+
+
+void ActionRecord::on_checkBox_stateChanged(int state)
+{
+    qInfo() << state;
+    if (state == Qt::Checked) {
+        this->isFakeModeActivated = true;
+    } else if (state == Qt::Unchecked) {
+        this->isFakeModeActivated = false;
+    }
 }
 

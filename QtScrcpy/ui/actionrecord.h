@@ -6,6 +6,7 @@
 
 #include <QVector>
 #include <QString>
+#include <QMap>
 
 namespace Ui
 {
@@ -25,6 +26,8 @@ public:
     void setSerial(const QString& serial);
     bool recording();
     void step();
+    void loadTasks();
+    bool fakeModeActivated();
 
 private slots:
     void on_startButton_clicked();
@@ -33,11 +36,13 @@ private slots:
 
     void on_stepButton_clicked();
 
-    void on_domain_currentTextChanged(const QString &arg1);
+    void on_domain_currentTextChanged(const QString &text);
 
     void on_nextEpsButton_clicked();
 
     void on_lineEdit_returnPressed();
+
+    void on_checkBox_stateChanged(int state);
 
 private:
     Ui::ActionRecord *ui;
@@ -45,6 +50,8 @@ private:
     QVector<QString> curEpsActions;
     QString serial;
     bool isRecording;
+    bool isFakeModeActivated;
+    QMap<QString, QMap<QString, QVector<QString>>> tasks;
 };
 
 #endif // ACTIONRECORD_H

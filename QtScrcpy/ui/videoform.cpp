@@ -594,7 +594,8 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
             return;
         }
         event->setLocalPos(m_videoWidget->mapFrom(this, event->localPos().toPoint()));
-        emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
+        if (!ActionRecord::getInstance().fakeModeActivated())
+            emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
 
         // debug keymap pos
         if (event->button() == Qt::LeftButton) {
@@ -637,7 +638,8 @@ void VideoForm::mouseReleaseEvent(QMouseEvent *event)
             local.setY(m_videoWidget->height());
         }
         event->setLocalPos(local);
-        emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
+        if (!ActionRecord::getInstance().fakeModeActivated())
+            emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
 
         if (event->button() == Qt::LeftButton) {
             qreal x = event->localPos().x() / m_videoWidget->size().width();
