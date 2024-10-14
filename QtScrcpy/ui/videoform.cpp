@@ -605,7 +605,8 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
             // qInfo() << posTip.toStdString().c_str();
 
             if (ActionRecord::getInstance().recording())
-                ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+                // ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+                ActionRecord::getInstance().bufferedPress(qRound(x * 1000), qRound(y * 1000));
         }
     } else {
         if (event->button() == Qt::LeftButton) {
@@ -648,7 +649,8 @@ void VideoForm::mouseReleaseEvent(QMouseEvent *event)
             // qInfo() << posTip.toStdString().c_str();
 
             if (ActionRecord::getInstance().recording())
-                ActionRecord::getInstance().appendAction(QString("RELEASE [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+                // ActionRecord::getInstance().appendAction(QString("RELEASE [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+                ActionRecord::getInstance().bufferedRelease(qRound(x * 1000), qRound(y * 1000));
         }
     } else {
         m_dragPosition = QPoint(0, 0);

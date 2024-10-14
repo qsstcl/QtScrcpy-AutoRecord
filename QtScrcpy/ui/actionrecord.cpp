@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QDateTime>
 
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
@@ -156,6 +157,29 @@ bool ActionRecord::fakeModeActivated()
     return this->isFakeModeActivated;
 }
 
+void ActionRecord::bufferedPress(int x, int y)
+{
+    this->bufferedPressTime = QDateTime::currentMSecsSinceEpoch();
+    this->bufferedPressPos = qMakePair(x, y);
+}
+
+void ActionRecord::bufferedRelease(int x, int y)
+{
+    qint64 ts = QDateTime::currentMSecsSinceEpoch();
+    if (this->bufferedPressTime < 0 || ts < this->bufferedPressTime)
+        return;
+    qint64 diff = ts - this->bufferedPressTime;
+    int xDist = x - bufferedPressPos.first, yDist = y - bufferedPressPos.second;
+    int dist = xDist * xDist + yDist * yDist;
+    if (diff >= 700 && dist <= 100) {
+        this->appendAction(QString("LONGCLICK [%1, %2]").arg(x).arg(y));
+    } else {
+        this->appendAction(QString("PRESS [%1, %2]").arg(bufferedPressPos.first).arg(bufferedPressPos.second));
+        this->appendAction(QString("RELEASE [%1, %2]").arg(x).arg(y));
+    }
+    this->bufferedPressTime = -1;
+}
+
 
 void ActionRecord::on_stepButton_clicked()
 {
@@ -230,7 +254,7 @@ void ActionRecord::on_nextEpsButton_clicked()
     }
     QString content = QString("task: %1\n").arg(ui->taskEdit->text());
     for (auto& s : this->curEpsActions) {
-        content += s + "\n";
+        content += s + '\n';
     }
     logFile.write(content.toStdString().c_str());
     logFile.close();

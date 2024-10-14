@@ -28,6 +28,8 @@ public:
     void step();
     void loadTasks();
     bool fakeModeActivated();
+    void bufferedPress(int x, int y);
+    void bufferedRelease(int x, int y);
 
 private slots:
     void on_startButton_clicked();
@@ -52,6 +54,9 @@ private:
     bool isRecording;
     bool isFakeModeActivated;
     QMap<QString, QMap<QString, QVector<QString>>> tasks;
+
+    QPair<int, int> bufferedPressPos;
+    qint64 bufferedPressTime;
 };
 
 #endif // ACTIONRECORD_H
