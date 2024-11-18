@@ -3,6 +3,7 @@
 
 #include <QPointer>
 #include <QWidget>
+#include "actionrecord.h"
 
 #include "../QtScrcpyCore/include/QtScrcpyCore.h"
 
@@ -34,6 +35,7 @@ public:
     void switchFullScreen();
 
     bool isHost();
+    void setActionRecordInstance(ActionRecord* instance);
 
 private:
     void onFrame(int width, int height, uint8_t* dataY, uint8_t* dataU, uint8_t* dataV,
@@ -85,6 +87,8 @@ private:
     bool m_skin = true;
     QPoint m_fullScreenBeforePos;
     QString m_serial;
+
+    ActionRecord* actionRecord;
 };
 
 #endif // VIDEOFORM_H

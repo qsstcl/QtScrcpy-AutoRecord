@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QDateTime>
+#include <QThread>
 
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
@@ -42,11 +43,11 @@ ActionRecord::~ActionRecord()
     delete ui;
 }
 
-ActionRecord &ActionRecord::getInstance()
-{
-    static ActionRecord instance;
-    return instance;
-}
+// ActionRecord &ActionRecord::getInstance()
+// {
+//     static ActionRecord instance;
+//     return instance;
+// }
 
 void ActionRecord::appendAction(const QString &action)
 {
@@ -65,6 +66,11 @@ void ActionRecord::on_startButton_clicked()
     }
     QString filename = QString("%1/%2/%3/%4/%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
     device->screenshotWithFilename(filename);
+
+    const QString& recordRootPath = device->getDeviceParams().recordPath;
+    QDir dir(recordRootPath);
+    QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
+    dumpXml(absolutePath);
 }
 
 
@@ -180,6 +186,11 @@ void ActionRecord::bufferedRelease(int x, int y)
     this->bufferedPressTime = -1;
 }
 
+void ActionRecord::setAdbProcess(qsc::AdbProcess *adb)
+{
+    this->adb = adb;
+}
+
 
 void ActionRecord::on_stepButton_clicked()
 {
@@ -202,8 +213,12 @@ void ActionRecord::on_stepButton_clicked()
     QString filename = QString("%1/%2/%3/%4/%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
 
     device->screenshotWithFilename(filename);
-}
 
+    const QString& recordRootPath = device->getDeviceParams().recordPath;
+    QDir dir(recordRootPath);
+    QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
+    dumpXml(absolutePath);
+}
 
 void ActionRecord::on_domain_currentTextChanged(const QString &text)
 {
@@ -294,5 +309,21 @@ void ActionRecord::on_checkBox_stateChanged(int state)
     } else if (state == Qt::Unchecked) {
         this->isFakeModeActivated = false;
     }
+}
+
+void ActionRecord::dumpXml(const QString &absPath)
+{
+    qDebug() << "try dump xml to " << absPath;
+    QStringList adbArgs;
+    adbArgs << "shell" << "uiautomator" << "dump";
+    this->adb->execute(this->serial, adbArgs);
+    if (!this->adb->waitForFinished())
+        qDebug() << "dump xml timeout";
+    adbArgs.clear();
+    adbArgs << "pull" << "/sdcard/window_dump.xml" << absPath;
+    this->adb->execute(this->serial, adbArgs);
+    if (!this->adb->waitForFinished())
+        qDebug() << "pull xml timeout";
+    qDebug() << "xml dumped to " << absPath;
 }
 

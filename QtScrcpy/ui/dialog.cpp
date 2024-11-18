@@ -488,8 +488,14 @@ void Dialog::onDeviceConnected(bool success, const QString &serial, const QStrin
 
     GroupController::instance().addDevice(serial);
 
-    ActionRecord::getInstance().setSerial(serial);
-    ActionRecord::getInstance().show();
+    // ActionRecord::getInstance().setSerial(serial);
+    // ActionRecord::getInstance().show();
+    auto actionRecord = new ActionRecord(nullptr);
+    actionRecord->setSerial(serial);
+    actionRecord->setAdbProcess(&m_adb);
+    actionRecord->setWindowFlags(Qt::Window);
+    actionRecord->show();
+    videoForm->setActionRecordInstance(actionRecord);
 }
 
 void Dialog::onDeviceDisconnected(QString serial)

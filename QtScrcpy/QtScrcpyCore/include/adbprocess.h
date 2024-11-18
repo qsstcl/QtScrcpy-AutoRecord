@@ -34,6 +34,7 @@ public:
     void install(const QString &serial, const QString &local);
     void removePath(const QString &serial, const QString &path);
     bool isRuning();
+    bool waitForFinished(int msecs = 5000);
     void setShowTouchesEnabled(const QString &serial, bool enabled);
     void kill();
     QStringList arguments();

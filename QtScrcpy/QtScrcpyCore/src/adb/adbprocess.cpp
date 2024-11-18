@@ -41,6 +41,11 @@ bool AdbProcess::isRuning()
     return m_adbImpl->isRuning();
 }
 
+bool AdbProcess::waitForFinished(int msecs)
+{
+    return m_adbImpl->waitForFinished(msecs);
+}
+
 void AdbProcess::setShowTouchesEnabled(const QString &serial, bool enabled)
 {
     m_adbImpl->setShowTouchesEnabled(serial, enabled);

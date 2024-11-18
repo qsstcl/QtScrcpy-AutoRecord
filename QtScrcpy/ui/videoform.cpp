@@ -22,7 +22,7 @@
 #include "ui_videoform.h"
 #include "videoform.h"
 
-#include "actionrecord.h"
+// #include "actionrecord.h"
 
 VideoForm::VideoForm(bool framelessWindow, bool skin, QWidget *parent) : QWidget(parent), ui(new Ui::videoForm), m_skin(skin)
 {
@@ -351,8 +351,10 @@ void VideoForm::installShortcut()
         const QMimeData* mimeData = clipboard->mimeData();
         if (mimeData->hasText()) {
             qInfo() << "Paste: " << mimeData->text();
-            if (ActionRecord::getInstance().recording())
-                ActionRecord::getInstance().appendAction(QString("INPUT %1").arg(mimeData->text()));
+            // if (ActionRecord::getInstance().recording())
+            //     ActionRecord::getInstance().appendAction(QString("INPUT %1").arg(mimeData->text()));
+            if (this->actionRecord && this->actionRecord->recording())
+                this->actionRecord->appendAction(QString("INPUT %1").arg(mimeData->text()));
         } else {
             // qInfo() << "Paste: Nothing";
         }
@@ -370,11 +372,7 @@ void VideoForm::installShortcut()
         emit device->clipboardPaste();
     });
 
-    shortcut = new QShortcut(QKeySequence("Ctrl+d"), this);
-    shortcut->setAutoRepeat(false);
-    connect(shortcut, &QShortcut::activated, this, []() {
-        ActionRecord::getInstance().step();
-    });
+
 }
 
 QRect VideoForm::getScreenRect()
@@ -537,6 +535,17 @@ bool VideoForm::isHost()
     return m_toolForm->isHost();
 }
 
+void VideoForm::setActionRecordInstance(ActionRecord *instance)
+{
+    this->actionRecord = instance;
+    auto shortcut = new QShortcut(QKeySequence("Ctrl+d"), this);
+    shortcut->setAutoRepeat(false);
+    connect(shortcut, &QShortcut::activated, this, [this]() {
+        // ActionRecord::getInstance().step();
+        this->actionRecord->step();
+    });
+}
+
 void VideoForm::updateFPS(quint32 fps)
 {
     //qDebug() << "FPS:" << fps;
@@ -594,7 +603,9 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
             return;
         }
         event->setLocalPos(m_videoWidget->mapFrom(this, event->localPos().toPoint()));
-        if (!ActionRecord::getInstance().fakeModeActivated())
+        // if (!ActionRecord::getInstance().fakeModeActivated())
+        //     emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
+        if (!this->actionRecord || !this->actionRecord->fakeModeActivated())
             emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
 
         // debug keymap pos
@@ -604,9 +615,11 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
             // QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
             // qInfo() << posTip.toStdString().c_str();
 
-            if (ActionRecord::getInstance().recording())
-                // ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
-                ActionRecord::getInstance().bufferedPress(qRound(x * 1000), qRound(y * 1000));
+            // if (ActionRecord::getInstance().recording())
+            //     // ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+            //     ActionRecord::getInstance().bufferedPress(qRound(x * 1000), qRound(y * 1000));
+            if (this->actionRecord && this->actionRecord->recording())
+                this->actionRecord->bufferedPress(qRound(x * 1000), qRound(y * 1000));
         }
     } else {
         if (event->button() == Qt::LeftButton) {
@@ -639,7 +652,8 @@ void VideoForm::mouseReleaseEvent(QMouseEvent *event)
             local.setY(m_videoWidget->height());
         }
         event->setLocalPos(local);
-        if (!ActionRecord::getInstance().fakeModeActivated())
+        // if (!ActionRecord::getInstance().fakeModeActivated())
+        if (!this->actionRecord || !this->actionRecord->fakeModeActivated())
             emit device->mouseEvent(event, m_videoWidget->frameSize(), m_videoWidget->size());
 
         if (event->button() == Qt::LeftButton) {
@@ -648,9 +662,11 @@ void VideoForm::mouseReleaseEvent(QMouseEvent *event)
             // QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
             // qInfo() << posTip.toStdString().c_str();
 
-            if (ActionRecord::getInstance().recording())
-                // ActionRecord::getInstance().appendAction(QString("RELEASE [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
-                ActionRecord::getInstance().bufferedRelease(qRound(x * 1000), qRound(y * 1000));
+            // if (ActionRecord::getInstance().recording())
+            //     // ActionRecord::getInstance().appendAction(QString("RELEASE [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
+            //     ActionRecord::getInstance().bufferedRelease(qRound(x * 1000), qRound(y * 1000));
+            if (this->actionRecord && this->actionRecord->recording())
+                this->actionRecord->bufferedRelease(qRound(x * 1000), qRound(y * 1000));
         }
     } else {
         m_dragPosition = QPoint(0, 0);

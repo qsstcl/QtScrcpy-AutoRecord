@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QString>
 #include <QMap>
+#include "adbprocess.h"
 
 namespace Ui
 {
@@ -21,7 +22,7 @@ class ActionRecord : public QWidget
 public:
     explicit ActionRecord(QWidget *parent = nullptr);
     ~ActionRecord();
-    static ActionRecord& getInstance();
+    // static ActionRecord& getInstance();
     void appendAction(const QString& action);
     void setSerial(const QString& serial);
     bool recording();
@@ -30,6 +31,7 @@ public:
     bool fakeModeActivated();
     void bufferedPress(int x, int y);
     void bufferedRelease(int x, int y);
+    void setAdbProcess(qsc::AdbProcess* adb);
 
 private slots:
     void on_startButton_clicked();
@@ -47,6 +49,8 @@ private slots:
     void on_checkBox_stateChanged(int state);
 
 private:
+    void dumpXml(const QString& absPath);
+
     Ui::ActionRecord *ui;
     QVector<QString> curStepActions;
     QVector<QString> curEpsActions;
@@ -57,6 +61,8 @@ private:
 
     QPair<int, int> bufferedPressPos;
     qint64 bufferedPressTime;
+
+    qsc::AdbProcess* adb = nullptr;
 };
 
 #endif // ACTIONRECORD_H
