@@ -612,8 +612,9 @@ void VideoForm::mousePressEvent(QMouseEvent *event)
         if (event->button() == Qt::LeftButton) {
             qreal x = event->localPos().x() / m_videoWidget->size().width();
             qreal y = event->localPos().y() / m_videoWidget->size().height();
+            // qDebug() << "video widget: " << m_videoWidget->size().width() << " x " << m_videoWidget->size().height();
             // QString posTip = QString(R"("pos": {"x": %1, "y": %2})").arg(x).arg(y);
-            // qInfo() << posTip.toStdString().c_str();
+            // qDebug() << posTip.toStdString().c_str();
 
             // if (ActionRecord::getInstance().recording())
             //     // ActionRecord::getInstance().appendAction(QString("PRESS [%1, %2]").arg(qRound(x * 1000)).arg(qRound(y * 1000)));
