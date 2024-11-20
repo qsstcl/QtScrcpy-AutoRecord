@@ -67,10 +67,10 @@ void ActionRecord::on_startButton_clicked()
     QString filename = QString("%1/%2/%3/%4/%5.jpg").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text()).arg(ui->stepSpin->text());
     device->screenshotWithFilename(filename);
 
-    const QString& recordRootPath = device->getDeviceParams().recordPath;
-    QDir dir(recordRootPath);
-    QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
-    dumpXml(absolutePath);
+    // const QString& recordRootPath = device->getDeviceParams().recordPath;
+    // QDir dir(recordRootPath);
+    // QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
+    // dumpXml(absolutePath);
 }
 
 
@@ -214,10 +214,10 @@ void ActionRecord::on_stepButton_clicked()
 
     device->screenshotWithFilename(filename);
 
-    const QString& recordRootPath = device->getDeviceParams().recordPath;
-    QDir dir(recordRootPath);
-    QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
-    dumpXml(absolutePath);
+    // const QString& recordRootPath = device->getDeviceParams().recordPath;
+    // QDir dir(recordRootPath);
+    // QString absolutePath = dir.absoluteFilePath(filename.replace(".jpg", ".xml"));
+    // dumpXml(absolutePath);
 }
 
 void ActionRecord::on_domain_currentTextChanged(const QString &text)
