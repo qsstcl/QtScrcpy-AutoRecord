@@ -9,19 +9,26 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <QThread>
-
+#include <QProcess>
 ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::ActionRecord) {
     ui->setupUi(this);
     ui->comboBox->addItem("OnePlus");
     ui->comboBox->addItem("Huawei");
+    ui->comboBox->addItem("Samsung");
     ui->comboBox->setCurrentIndex(0);
 
+    ui->launchAppBox->addItem("xhs");
+    ui->launchAppBox->addItem("meituan");
+    ui->domain->addItem("Multi-app");
     ui->domain->addItem("Lifestyle");
     ui->domain->addItem("Tools");
     ui->domain->addItem("Communication");
     ui->domain->addItem("Multimedia");
     ui->domain->addItem("System");
     ui->domain->setCurrentIndex(0);
+    QStringList difficulties = {"1", "2", "3", "4","5"};
+    ui->DifficultyBox->addItems(difficulties);
+    // launch app logic
 
     ui->episodeSpin->setMinimum(1);
     ui->stepSpin->setMinimum(1);
@@ -116,7 +123,7 @@ void ActionRecord::loadTasks()
     QDir dir(recordRootPath);
     QString absolutePath = dir.absoluteFilePath(filename);
     QFile file(absolutePath);
-    if (!file.open(QIODevice::ReadWrite)) {
+    if (!file.open(QIODevice::Append)) {
         qInfo() << "Open file " << filename << " failed.";
         return;
     }
@@ -243,6 +250,8 @@ void ActionRecord::on_domain_currentTextChanged(const QString &text)
         ui->subdomain->addItem("Email");
         ui->subdomain->addItem("Social-Networking");
         ui->subdomain->addItem("Instant-Messaging");
+    } else if (text == "Multi-app"){
+        ui->subdomain->addItem("maiyao");
     }
     // auto& map = this->tasks[arg1];
     // for (auto it = map.keyBegin(); it != map.keyEnd(); it++) {
@@ -263,7 +272,7 @@ void ActionRecord::on_nextEpsButton_clicked()
 
     QString absolutePath = dir.absoluteFilePath(filename);
     QFile logFile(absolutePath);
-    if (!logFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
+    if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
         qInfo() << "Open file " << filename << " failed.";
         return;
     }
@@ -327,3 +336,52 @@ void ActionRecord::dumpXml(const QString &absPath)
     qDebug() << "xml dumped to " << absPath;
 }
 
+void ActionRecord::on_launchButton_clicked(){
+    QString appName = ui->launchAppBox->currentText();
+
+    QMap<QString, QString> appMap = {
+        {"xhs", "com.xingin.xhs/com.xingin.xhs.index.v2.IndexActivityV2"},
+        {"meituan", "com.sankuai.meituan/com.meituan.android.pt.homepage.activity.MainActivity"}
+    };
+
+    if (appMap.contains(appName)) {
+        QString command = "adb";
+        QStringList arguments = {"shell", "am", "start", "-n", appMap[appName]};
+
+        if (!QProcess::startDetached(command, arguments)) {
+            qWarning() << "Failed to start the command.";
+        } else {
+            qInfo() << "Command executed successfully.";
+            QString content = QString("LAUNCH %1").arg(appName);
+            appendAction(content);
+        }
+    } else {
+        qInfo() << "No action defined for app name:" << appName;
+    }
+}
+
+void ActionRecord::on_summaryButton_clicked(){
+
+    appendAction(QString("SUMMARY"));
+}
+
+void ActionRecord::on_setDifficultyButton_clicked(){
+
+    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
+    if (!device) {
+        return;
+    }
+    const QString& recordRootPath = device->getDeviceParams().recordPath;
+    QString filename = QString("%1/%2/%3/%4/actions.log").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text());
+    QDir dir(recordRootPath);
+
+    QString absolutePath = dir.absoluteFilePath(filename);
+    QFile logFile(absolutePath);
+    if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
+        qInfo() << "Open file " << filename << " failed.";
+        return;
+    }
+    QString content = QString("DIFFICULTY %1\n").arg(ui->DifficultyBox->currentText());
+    logFile.write(content.toStdString().c_str());
+    logFile.close();
+}

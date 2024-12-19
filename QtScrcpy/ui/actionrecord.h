@@ -48,6 +48,11 @@ private slots:
 
     void on_checkBox_stateChanged(int state);
 
+    void on_launchButton_clicked();
+
+    void on_summaryButton_clicked();
+
+    void on_setDifficultyButton_clicked();
 private:
     void dumpXml(const QString& absPath);
 
