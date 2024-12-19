@@ -362,22 +362,9 @@
     <rect>
      <x>200</x>
      <y>330</y>
-     <width>81</width>
+     <width>161</width>
      <height>21</height>
     </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="setDifficultyButton">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>330</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>set</string>
    </property>
   </widget>
  </widget>

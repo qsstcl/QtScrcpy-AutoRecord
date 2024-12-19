@@ -17,8 +17,9 @@ ActionRecord::ActionRecord(QWidget *parent) : QWidget(parent), ui(new Ui::Action
     ui->comboBox->addItem("Samsung");
     ui->comboBox->setCurrentIndex(0);
 
-    ui->launchAppBox->addItem("xhs");
+    ui->launchAppBox->addItem("xiaohongshu");
     ui->launchAppBox->addItem("meituan");
+    ui->launchAppBox->addItem("eleme");
     ui->domain->addItem("Multi-app");
     ui->domain->addItem("Lifestyle");
     ui->domain->addItem("Tools");
@@ -276,7 +277,9 @@ void ActionRecord::on_nextEpsButton_clicked()
         qInfo() << "Open file " << filename << " failed.";
         return;
     }
-    QString content = QString("task: %1\n").arg(ui->taskEdit->text());
+    QString content = QString("DIFFICULTY %1\n").arg(ui->DifficultyBox->currentText());
+    logFile.write(content.toStdString().c_str());
+    content = QString("task: %1\n").arg(ui->taskEdit->text());
     for (auto& s : this->curEpsActions) {
         content += s + '\n';
     }
@@ -340,21 +343,20 @@ void ActionRecord::on_launchButton_clicked(){
     QString appName = ui->launchAppBox->currentText();
 
     QMap<QString, QString> appMap = {
-        {"xhs", "com.xingin.xhs/com.xingin.xhs.index.v2.IndexActivityV2"},
-        {"meituan", "com.sankuai.meituan/com.meituan.android.pt.homepage.activity.MainActivity"}
+        {"xiaohongshu", "com.xingin.xhs/com.xingin.xhs.index.v2.IndexActivityV2"},
+        {"meituan", "com.sankuai.meituan/com.meituan.android.pt.homepage.activity.MainActivity"},
+        {"eleme", "me.ele/me.ele.Launcher"}
     };
 
     if (appMap.contains(appName)) {
-        QString command = "adb";
-        QStringList arguments = {"shell", "am", "start", "-n", appMap[appName]};
 
-        if (!QProcess::startDetached(command, arguments)) {
-            qWarning() << "Failed to start the command.";
-        } else {
-            qInfo() << "Command executed successfully.";
-            QString content = QString("LAUNCH %1").arg(appName);
-            appendAction(content);
-        }
+        QStringList arguments = {"shell", "am", "start", "-n", appMap[appName]};
+        this->adb->execute(this->serial,arguments);
+
+        qInfo() << "Command executed successfully.";
+        QString content = QString("LAUNCH %1").arg(appName);
+        appendAction(content);
+
     } else {
         qInfo() << "No action defined for app name:" << appName;
     }
@@ -363,25 +365,4 @@ void ActionRecord::on_launchButton_clicked(){
 void ActionRecord::on_summaryButton_clicked(){
 
     appendAction(QString("SUMMARY"));
-}
-
-void ActionRecord::on_setDifficultyButton_clicked(){
-
-    auto device = qsc::IDeviceManage::getInstance().getDevice(this->serial);
-    if (!device) {
-        return;
-    }
-    const QString& recordRootPath = device->getDeviceParams().recordPath;
-    QString filename = QString("%1/%2/%3/%4/actions.log").arg(ui->comboBox->currentText()).arg(ui->domain->currentText()).arg(ui->subdomain->currentText()).arg(ui->episodeSpin->text());
-    QDir dir(recordRootPath);
-
-    QString absolutePath = dir.absoluteFilePath(filename);
-    QFile logFile(absolutePath);
-    if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
-        qInfo() << "Open file " << filename << " failed.";
-        return;
-    }
-    QString content = QString("DIFFICULTY %1\n").arg(ui->DifficultyBox->currentText());
-    logFile.write(content.toStdString().c_str());
-    logFile.close();
 }
